@@ -11,6 +11,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_moment import Moment
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import func, null
+from sqlalchemy.exc import SQLAlchemyError
 import logging
 from logging import Formatter, FileHandler
 from flask_wtf import Form
@@ -140,10 +141,10 @@ def show_venue(venue_id):
     "seeking_talent": venue_data.seeking_talent,
     "seeking_description": venue_data.seeking_description,
     "image_link": venue_data.image_link,
-    "past_shows": venue_data.shows,
-    "upcoming_shows": venue_data.shows,
-    "past_shows_count": len(venue_data.shows),
-    "upcoming_shows_count": len(venue_data.shows),  
+    "past_shows": venue_data.shows.filter(Show.start_time <  datetime.utcnow()).all(),
+    "upcoming_shows": venue_data.shows.filter(Show.start_time >  datetime.utcnow()).all(),
+    "past_shows_count": len(venue_data.shows.filter(Show.start_time <  datetime.utcnow()).all()),
+    "upcoming_shows_count": len(venue_data.shows.filter(Show.start_time >  datetime.utcnow()).all()),  
   }  
   # data1={
   #   "id": 1,
@@ -357,10 +358,10 @@ def show_artist(artist_id):
     "seeking_venue": artist_data.seeking_venue,
     "seeking_description": artist_data.seeking_description,
     "image_link": artist_data.image_link,
-    "past_shows": artist_data.shows,
-    "upcoming_shows": artist_data.shows,
-    "past_shows_count": len(artist_data.shows),
-    "upcoming_shows_count": len(artist_data.shows),  
+    "past_shows": artist_data.shows.filter(Show.start_time <  datetime.utcnow()).all(),
+    "upcoming_shows": artist_data.shows.filter(Show.start_time >  datetime.utcnow()).all(),
+    "past_shows_count": len(artist_data.shows.filter(Show.start_time <  datetime.utcnow()).all()),
+    "upcoming_shows_count": len(artist_data.shows.filter(Show.start_time >  datetime.utcnow()).all()),  
   }  
 
   # data1={
@@ -649,6 +650,8 @@ def create_show_submission():
   # TODO: insert form data as a new Show record in the db, instead
 
   form = ShowForm()
+  error = False
+  errorMessage = null
   if form.validate_on_submit():
     try:
       show = Show()
@@ -657,15 +660,19 @@ def create_show_submission():
       show.start_time = form.start_time.data
       db.session.add(show)
       db.session.commit()
-    except:
+    except SQLAlchemyError as e:
+      error = True
+      errorMessage = str(e.__dict__['orig'])
       db.session.rollback()
     finally:
       db.session.close()  
   else:
     flash(form.errors)
- 
+  if  error == True:
+    flash(errorMessage)
+  else:            
   # on successful db insert, flash success
-  flash('Show was successfully listed!')
+    flash('Show was successfully listed!')
   # TODO: on unsuccessful db insert, flash an error instead.
   # e.g., flash('An error occurred. Show could not be listed.')
   # see: http://flask.pocoo.org/docs/1.0/patterns/flashing/
