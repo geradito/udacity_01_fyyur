@@ -111,7 +111,7 @@ def search_venues():
       "data": []
     }
   for venue in venues:
-    response["data"].append({"id":venue.id, "name":venue.name, "num_upcoming_shows":len(venue.shows)})
+    response["data"].append({"id":venue.id, "name":venue.name, "num_upcoming_shows":len(venue.shows.all())})
 
   # response={
   #   "count": 1,
@@ -329,7 +329,7 @@ def search_artists():
       "data": []
     }
   for artist in artists:
-    response["data"].append({"id":artist.id, "name":artist.name, "num_upcoming_shows":len(artist.shows)})
+    response["data"].append({"id":artist.id, "name":artist.name, "num_upcoming_shows":len(artist.shows.all())})
 
   # response={
   #   "count": 1,
